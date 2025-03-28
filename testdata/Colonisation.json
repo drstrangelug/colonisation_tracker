@@ -1,0 +1,25 @@
+{
+	"StarSystem": "Pequenenses",
+	"DeliveryStation": "System Colonisation Ship",
+    "Materials": {
+        "aluminium": 0,
+        "ceramiccomposites": 529,
+        "cmmcomposite": 0,
+        "computercomponents": 64,
+        "copper": 235,
+        "foodcartridges": 91,
+        "fruitandvegetables": 48,
+        "insulatingmembrane": 335,
+        "liquidoxygen": 1322,
+        "medicaldiagnosticequipment": 13,
+        "nonlethalweapons": 13,
+        "polymers": 544,
+        "powergenerators": 19,
+        "semiconductors": 68,
+        "steel": 0,
+        "superconductors": 109,
+        "titanium": 0,
+        "water": 748,
+        "waterpurifiers": 38
+    }
+}
