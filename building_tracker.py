@@ -2,11 +2,13 @@ from __future__ import annotations
 from config import config
 import myNotebook as nb  # noqa: N813
 import tkinter as tk
+import logging
 from tkinter import *
 from itertools import islice
 from tkinter import ttk
 from market_handler import commodity_names
-
+from cargo_manager import CargoManager
+from shopping_list import ShoppingList
 
 
 class BuildingTracker:
@@ -35,6 +37,8 @@ class BuildingTracker:
             "water": 748,
             "waterpurifiers": 38,
         }
+        self.cargo_manager = CargoManager(logger)
+        self.shopping_list = ShoppingList(logger)
         try:
             max = config.get_int('max_commodities')
             if max is None or not isinstance(max, int):
@@ -122,13 +126,6 @@ class BuildingTracker:
         self.frame = frame
         self.populate_shopping_list()
         return frame
-    
-    def load_initial_cargo(self, cargo: Dict[str, int]) -> None:
-        self.current_cargo = {}
-        for item in self.shopping_list:
-            if item in cargo:
-                self.current_cargo[item] = cargo.get(item)
-                self.logger.info(f"Recognised shopping list item {item} in cargo with {self.current_cargo.get(item,0)} units")
 
     def update_shopping_list(self, cargo_name:str, amount_sold:int)->None:
         if cargo_name in self.shopping_list:
@@ -136,33 +133,6 @@ class BuildingTracker:
             if cargo_name in self.labels:
                 self.labels[cargo_name].config(text=f"{self.shopping_list[cargo_name]}")
                 self.logger.info(f"Updating shopping list for {cargo_name} to {self.shopping_list[cargo_name]}")
-
-    def update_cargo(self, cargo: Dict[str, int]) -> None:
-        for cargoName in cargo:
-            if cargoName in self.current_cargo:
-                if self.current_cargo.get(cargoName) > cargo.get(cargoName):
-                    sold = self.current_cargo.get(cargoName) - cargo.get(cargoName)
-                    if sold>0:
-                        self.current_cargo[cargoName] = self.current_cargo[cargoName] - sold
-                        self.logger.info(f"Sold {sold} of {cargoName}  - hold now has {self.current_cargo.get(cargoName,0)}")
-                        if self.is_docker_at_colonisation_ship():
-                            self.update_shopping_list(cargoName, sold)
-                else:
-                    bought = cargo.get(cargoName) - self.current_cargo.get(cargoName)
-                    if bought>0:
-                        self.current_cargo[cargoName] = self.current_cargo[cargoName] + bought
-                        self.logger.info(f"Bought {bought} of {cargoName} - hold now has {self.current_cargo.get(cargoName)}")
-            else:
-                bought = cargo.get(cargoName)
-                self.current_cargo[cargoName] = bought
-                self.logger.info(f"Bought {bought} of {cargoName}")
-        for cargoName in self.current_cargo:
-            if cargoName not in cargo:
-                sold=self.current_cargo.get(cargoName)
-                self.logger.info(f"Empty of {cargoName} [ {self.current_cargo.get(cargoName)} removed from hold]")
-                del self.current_cargo[cargoName]
-                if self.is_docker_at_colonisation_ship():
-                    self.update_shopping_list(cargoName, sold)
 
     def set_star_system(self, system: str) -> None:
         self.star_system=system
@@ -196,10 +166,10 @@ class BuildingTracker:
         self, cmdr: str, is_beta: bool, system: str, station: str, entry: Dict[str, Any], state: Dict[str, Any]
     ) -> None:
         if 'Cargo' in state:
-            if not hasattr(self, 'current_cargo'):
-                self.load_initial_cargo(state['Cargo'])
-            else:
-                self.update_cargo(state['Cargo'])
+            sold_list = self.cargo_manager.update_cargo(state['Cargo'])
+            
+            if self.is_docker_at_colonisation_ship():
+                self.update_shopping_list(cargoName, sold)
 
     def set_startup(self, entry: Dict[str, Any]) -> None:
         if 'StarSystem' in entry:
@@ -220,7 +190,7 @@ class BuildingTracker:
             self.logger.info(f"StartUp in {self.star_system} in space")
 
     def process_event(self, event: str, entry: Dict[str, Any], state: Dict[str, Any]) -> None:
-        if event in ('Cargo', 'MarketBuy', 'MarketSell'):
+        if event in ('Cargo', 'MarketBuy', 'MarketSell') and 'Cargo' in state:
             self.cargo_update(entry)
         elif event == 'Location':
             self.set_startup_location(entry)

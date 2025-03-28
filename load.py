@@ -43,7 +43,6 @@ class ColonisationTracker:
 
     
 bt = BuildingTracker(logger,PLUGIN_NAME)
-ct = ColonisationTracker()
 
 def journal_entry(
         cmdr: str, is_beta: bool, system: str, station: str, entry: Dict[str, Any], state: Dict[str, Any]
