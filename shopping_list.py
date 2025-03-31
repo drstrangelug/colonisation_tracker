@@ -22,7 +22,7 @@ class ShoppingList:
         journaldir = config.get_str('journaldir')
         if journaldir is None or journaldir == '':
             journaldir = config.default_journal_dir
-        filepath = pathlib.Path(f"{journaldir}/Colonisation.json")
+        filepath = pathlib.Path(f"{journaldir}/colonisation_tracker.json")
         
         try:
             with open(filepath, 'r') as f:
